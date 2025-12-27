@@ -43,8 +43,6 @@ impl LanguageServer for Backend {
         })
     }
 
-    async fn initialized(&self, _: InitializedParams) {}
-
     async fn shutdown(&self) -> Result<()> {
         Ok(())
     }
