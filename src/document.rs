@@ -10,7 +10,7 @@ pub struct Line {
 
 impl std::fmt::Display for Line {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        f.write_str(&self.text)
+        writeln!(f, "{}", self.text)
     }
 }
 
@@ -20,11 +20,8 @@ pub struct Document {
 
 impl std::fmt::Display for Document {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        for (i, line) in self.lines.iter().enumerate() {
-            if i > 0 {
-                writeln!(f)?;
-            }
-            write!(f, "{line}")?;
+        for line in &self.lines {
+            write!(f, "{}", line)?;
         }
         Ok(())
     }
@@ -167,7 +164,7 @@ mod tests {
 
     #[test]
     fn unicode_edit_in_string() {
-        let mut doc = Document::from("a•a");
+        let mut doc = Document::from("a•a\n");
 
         doc.edit(&TextDocumentContentChangeEvent {
             range: Some(Range {
@@ -184,7 +181,7 @@ mod tests {
             text: "b".to_string(),
         });
 
-        assert_eq!(doc.to_string(), "a•b");
+        assert_eq!(doc.to_string(), "a•b\n");
     }
 
     fn assert_colors_eq(
@@ -212,7 +209,7 @@ mod tests {
 
     #[test]
     fn replace_text() {
-        let mut doc = Document::from("#FF0000");
+        let mut doc = Document::from("#FF0000\n");
 
         assert_colors_eq(doc.get_colors(), &[(1.0, 0.0, 0.0, 1.0, 0, 0, 0, 7)]);
 
@@ -221,14 +218,14 @@ mod tests {
             range_length: None,
             text: "#00FF00".to_string(),
         });
-        assert_eq!(doc.to_string(), "#00FF00");
+        assert_eq!(doc.to_string(), "#00FF00\n");
 
         assert_colors_eq(doc.get_colors(), &[(0.0, 1.0, 0.0, 1.0, 0, 0, 0, 7)]);
     }
 
     #[test]
     fn append_end() {
-        let mut doc = Document::from("#FF0000");
+        let mut doc = Document::from("#FF0000\n");
 
         assert_colors_eq(doc.get_colors(), &[(1.0, 0.0, 0.0, 1.0, 0, 0, 0, 7)]);
 
@@ -246,7 +243,7 @@ mod tests {
             range_length: None,
             text: "\n#00FF00".to_string(),
         });
-        assert_eq!(doc.to_string(), "#FF0000\n#00FF00");
+        assert_eq!(doc.to_string(), "#FF0000\n#00FF00\n");
 
         assert_colors_eq(
             doc.get_colors(),
@@ -259,7 +256,7 @@ mod tests {
 
     #[test]
     fn append_middle() {
-        let mut doc = Document::from("#FF0000\n#00FF00\n#0000FF");
+        let mut doc = Document::from("#FF0000\n#00FF00\n#0000FF\n");
 
         assert_colors_eq(
             doc.get_colors(),
@@ -284,7 +281,7 @@ mod tests {
             range_length: None,
             text: "\n#000000\n".to_string(),
         });
-        assert_eq!(doc.to_string(), "#FF0000\n#000000\n#00FF00\n#0000FF");
+        assert_eq!(doc.to_string(), "#FF0000\n#000000\n#00FF00\n#0000FF\n");
 
         assert_colors_eq(
             doc.get_colors(),
@@ -299,7 +296,7 @@ mod tests {
 
     #[test]
     fn delete_color_line() {
-        let mut doc = Document::from("#FF0000\n#00FF00\n#0000FF");
+        let mut doc = Document::from("#FF0000\n#00FF00\n#0000FF\n");
 
         assert_colors_eq(
             doc.get_colors(),
@@ -325,7 +322,7 @@ mod tests {
             range_length: None,
             text: "".to_string(),
         });
-        assert_eq!(doc.to_string(), "#FF0000\n#0000FF");
+        assert_eq!(doc.to_string(), "#FF0000\n#0000FF\n");
 
         assert_colors_eq(
             doc.get_colors(),
@@ -338,7 +335,7 @@ mod tests {
 
     #[test]
     fn delete_one_char() {
-        let mut doc = Document::from("#FF0000");
+        let mut doc = Document::from("#FF0000\n");
 
         assert_colors_eq(doc.get_colors(), &[(1.0, 0.0, 0.0, 1.0, 0, 0, 0, 7)]);
 
@@ -357,14 +354,14 @@ mod tests {
             range_length: None,
             text: "".to_string(),
         });
-        assert_eq!(doc.to_string(), "#FF000");
+        assert_eq!(doc.to_string(), "#FF000\n");
 
         assert!(doc.get_colors().is_empty());
     }
 
     #[test]
     fn replace_partial_line() {
-        let mut doc = Document::from("#FF0000");
+        let mut doc = Document::from("#FF0000\n");
 
         assert_colors_eq(doc.get_colors(), &[(1.0, 0.0, 0.0, 1.0, 0, 0, 0, 7)]);
 
@@ -383,14 +380,14 @@ mod tests {
             range_length: None,
             text: "00FF".to_string(),
         });
-        assert_eq!(doc.to_string(), "#FF00FF");
+        assert_eq!(doc.to_string(), "#FF00FF\n");
 
         assert_colors_eq(doc.get_colors(), &[(1.0, 0.0, 1.0, 1.0, 0, 0, 0, 7)]);
     }
 
     #[test]
     fn clear_document_then_add_from() {
-        let mut doc = Document::from("#FF0000\n#00FF00");
+        let mut doc = Document::from("#FF0000\n#00FF00\n");
 
         assert_colors_eq(
             doc.get_colors(),
@@ -416,14 +413,14 @@ mod tests {
             range_length: None,
             text: "#FFFFFF".to_string(),
         });
-        assert_eq!(doc.to_string(), "#FFFFFF");
+        assert_eq!(doc.to_string(), "#FFFFFF\n");
 
         assert_colors_eq(doc.get_colors(), &[(1.0, 1.0, 1.0, 1.0, 0, 0, 0, 7)]);
     }
 
     #[test]
     fn multiple_incremental_edits() {
-        let mut doc = Document::from("#FF0000");
+        let mut doc = Document::from("#FF0000\n");
 
         assert_colors_eq(doc.get_colors(), &[(1.0, 0.0, 0.0, 1.0, 0, 0, 0, 7)]);
 
@@ -442,7 +439,7 @@ mod tests {
             range_length: None,
             text: "\n#00FF00".to_string(),
         });
-        assert_eq!(doc.to_string(), "#FF0000\n#00FF00");
+        assert_eq!(doc.to_string(), "#FF0000\n#00FF00\n");
 
         assert_colors_eq(
             doc.get_colors(),
@@ -467,7 +464,7 @@ mod tests {
             range_length: None,
             text: "\n#0000FF".to_string(),
         });
-        assert_eq!(doc.to_string(), "#FF0000\n#00FF00\n#0000FF");
+        assert_eq!(doc.to_string(), "#FF0000\n#00FF00\n#0000FF\n");
 
         assert_colors_eq(
             doc.get_colors(),
