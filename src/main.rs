@@ -6,7 +6,7 @@ use std::collections::HashMap;
 use tokio::sync::RwLock;
 
 use tower_lsp_server::jsonrpc::Result;
-use tower_lsp_server::lsp_types::*;
+use tower_lsp_server::ls_types::*;
 use tower_lsp_server::{LanguageServer, LspService, Server};
 
 struct Backend {
