@@ -63,7 +63,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn rgb() {
+    fn parse_line_colors_rgb() {
         let colors = parse_line_colors("#FF0000", 0);
         assert_eq!(colors.len(), 1);
 
@@ -76,7 +76,20 @@ mod tests {
     }
 
     #[test]
-    fn rgba() {
+    fn parse_line_colors_rgb_lowercase() {
+        let colors = parse_line_colors("#ff0000", 0);
+        assert_eq!(colors.len(), 1);
+
+        let c = &colors[0];
+        assert_eq!(c.color.red, 1.0);
+        assert_eq!(c.color.green, 0.0);
+        assert_eq!(c.color.blue, 0.0);
+        assert_eq!(c.range.start.character, 0);
+        assert_eq!(c.range.end.character, 7);
+    }
+
+    #[test]
+    fn parse_line_colors_rgba() {
         let colors = parse_line_colors("#11223344", 0);
         assert_eq!(colors.len(), 1);
 
@@ -88,7 +101,7 @@ mod tests {
     }
 
     #[test]
-    fn unicode_before() {
+    fn parse_line_colors_unicode_before() {
         let colors = parse_line_colors("•#FF0000", 0);
         assert_eq!(colors.len(), 1);
 
@@ -101,7 +114,7 @@ mod tests {
     }
 
     #[test]
-    fn multiple_unicode_before() {
+    fn parse_line_colors_multiple_unicode_before() {
         let colors = parse_line_colors("• ☀️#FF0000", 0);
         assert_eq!(colors.len(), 1);
 
@@ -114,7 +127,7 @@ mod tests {
     }
 
     #[test]
-    fn unicode_after() {
+    fn parse_line_colors_unicode_after() {
         let colors = parse_line_colors("#FF0000•", 0);
         assert_eq!(colors.len(), 1);
 
@@ -127,7 +140,7 @@ mod tests {
     }
 
     #[test]
-    fn multiple_colors() {
+    fn parse_line_colors_multiple_colors() {
         let colors = parse_line_colors("#FF0000 #00FF00 #0000FF", 0);
         assert_eq!(colors.len(), 3);
 
@@ -137,13 +150,13 @@ mod tests {
     }
 
     #[test]
-    fn no_colors() {
+    fn parse_line_colors_no_colors() {
         let colors = parse_line_colors("no colors here", 2);
         assert!(colors.is_empty());
     }
 
     #[test]
-    fn text_with_color() {
+    fn parse_line_colors_text_with_color() {
         let colors = parse_line_colors("Color: #ABCDEF;", 3);
         assert_eq!(colors.len(), 1);
 
@@ -153,7 +166,7 @@ mod tests {
     }
 
     #[test]
-    fn embedded_color() {
+    fn parse_line_colors_embedded_color() {
         let colors = parse_line_colors("123#ABCDEFasd", 3);
         assert_eq!(colors.len(), 1);
 
