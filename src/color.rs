@@ -1,4 +1,4 @@
-use tower_lsp_server::lsp_types::{Color, ColorInformation, Position, Range};
+use tower_lsp_server::ls_types::{Color, ColorInformation, Position, Range};
 
 /// Parses all hex color codes in a line and returns them as `ColorInformation`.
 pub fn parse_line_colors(line: &str, line_idx: usize) -> Vec<ColorInformation> {
