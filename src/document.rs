@@ -1,36 +1,38 @@
-use std::fmt;
-
 use tower_lsp_server::lsp_types::*;
 
 use crate::color::parse_line_colors;
 
-#[derive(Clone, Default)]
+#[derive(Default)]
 pub struct Line {
     text: String,
     colors: Vec<ColorInformation>,
 }
 
-#[derive(Default)]
+impl std::fmt::Display for Line {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.write_str(&self.text)
+    }
+}
+
 pub struct Document {
     lines: Vec<Line>,
 }
 
-impl fmt::Display for Document {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl std::fmt::Display for Document {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         for (i, line) in self.lines.iter().enumerate() {
             if i > 0 {
-                f.write_str("\n")?;
+                writeln!(f)?;
             }
-            f.write_str(&line.text)?;
+            write!(f, "{line}")?;
         }
         Ok(())
     }
 }
 
-impl Document {
-    /// Creates a document from a string, splitting it into lines
-    pub fn from_text(content: &str) -> Self {
-        let lines: Vec<Line> = content
+impl From<&str> for Document {
+    fn from(s: &str) -> Self {
+        let lines = s
             .lines()
             .enumerate()
             .map(|(idx, line)| Line {
@@ -41,8 +43,11 @@ impl Document {
 
         Self { lines }
     }
+}
 
+impl Document {
     pub fn get_colors(&self) -> Vec<ColorInformation> {
+        // TODO: do smarter than collecting lines.
         self.lines
             .iter()
             .flat_map(|line| line.colors.clone())
@@ -162,7 +167,7 @@ mod tests {
 
     #[test]
     fn unicode_edit_in_string() {
-        let mut doc = Document::from_text("a•a");
+        let mut doc = Document::from("a•a");
 
         doc.edit(&TextDocumentContentChangeEvent {
             range: Some(Range {
@@ -207,7 +212,7 @@ mod tests {
 
     #[test]
     fn replace_text() {
-        let mut doc = Document::from_text("#FF0000");
+        let mut doc = Document::from("#FF0000");
 
         assert_colors_eq(doc.get_colors(), &[(1.0, 0.0, 0.0, 1.0, 0, 0, 0, 7)]);
 
@@ -223,7 +228,7 @@ mod tests {
 
     #[test]
     fn append_end() {
-        let mut doc = Document::from_text("#FF0000");
+        let mut doc = Document::from("#FF0000");
 
         assert_colors_eq(doc.get_colors(), &[(1.0, 0.0, 0.0, 1.0, 0, 0, 0, 7)]);
 
@@ -254,7 +259,7 @@ mod tests {
 
     #[test]
     fn append_middle() {
-        let mut doc = Document::from_text("#FF0000\n#00FF00\n#0000FF");
+        let mut doc = Document::from("#FF0000\n#00FF00\n#0000FF");
 
         assert_colors_eq(
             doc.get_colors(),
@@ -294,7 +299,7 @@ mod tests {
 
     #[test]
     fn delete_color_line() {
-        let mut doc = Document::from_text("#FF0000\n#00FF00\n#0000FF");
+        let mut doc = Document::from("#FF0000\n#00FF00\n#0000FF");
 
         assert_colors_eq(
             doc.get_colors(),
@@ -333,7 +338,7 @@ mod tests {
 
     #[test]
     fn delete_one_char() {
-        let mut doc = Document::from_text("#FF0000");
+        let mut doc = Document::from("#FF0000");
 
         assert_colors_eq(doc.get_colors(), &[(1.0, 0.0, 0.0, 1.0, 0, 0, 0, 7)]);
 
@@ -359,7 +364,7 @@ mod tests {
 
     #[test]
     fn replace_partial_line() {
-        let mut doc = Document::from_text("#FF0000");
+        let mut doc = Document::from("#FF0000");
 
         assert_colors_eq(doc.get_colors(), &[(1.0, 0.0, 0.0, 1.0, 0, 0, 0, 7)]);
 
@@ -384,8 +389,8 @@ mod tests {
     }
 
     #[test]
-    fn clear_document_then_add_new() {
-        let mut doc = Document::from_text("#FF0000\n#00FF00");
+    fn clear_document_then_add_from() {
+        let mut doc = Document::from("#FF0000\n#00FF00");
 
         assert_colors_eq(
             doc.get_colors(),
@@ -418,7 +423,7 @@ mod tests {
 
     #[test]
     fn multiple_incremental_edits() {
-        let mut doc = Document::from_text("#FF0000");
+        let mut doc = Document::from("#FF0000");
 
         assert_colors_eq(doc.get_colors(), &[(1.0, 0.0, 0.0, 1.0, 0, 0, 0, 7)]);
 
