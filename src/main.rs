@@ -54,7 +54,7 @@ impl LanguageServer for Backend {
         self.documents
             .write()
             .await
-            .insert(uri, Document::from_text(&content));
+            .insert(uri, Document::from(content.as_str()));
     }
 
     async fn did_change(&self, params: DidChangeTextDocumentParams) {
@@ -62,7 +62,9 @@ impl LanguageServer for Backend {
         let mut docs = self.documents.write().await;
 
         // Get or create the document
-        let doc = docs.entry(uri.clone()).or_insert_with(Document::default);
+        let doc = docs
+            .entry(uri.clone())
+            .or_insert_with(|| Document::from(""));
 
         // Apply all changes in order
         for change in params.content_changes {
