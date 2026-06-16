@@ -1,4 +1,28 @@
-use tower_lsp_server::ls_types::{Color, ColorInformation, Position, Range};
+#[derive(Clone)]
+pub struct Position {
+    pub line: u32,
+    pub character: u32,
+}
+
+#[derive(Clone)]
+pub struct Range {
+    pub start: Position,
+    pub end: Position,
+}
+
+#[derive(Clone)]
+pub struct Color {
+    pub red: f32,
+    pub green: f32,
+    pub blue: f32,
+    pub alpha: f32,
+}
+
+#[derive(Clone)]
+pub struct ColorInformation {
+    pub range: Range,
+    pub color: Color,
+}
 
 /// Parses all hex color codes in a line and returns them as `ColorInformation`.
 pub fn parse_line_colors(line: &str, line_idx: usize) -> Vec<ColorInformation> {

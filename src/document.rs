@@ -1,6 +1,6 @@
 use tower_lsp_server::ls_types::*;
 
-use crate::color::parse_line_colors;
+use crate::color::{ColorInformation, parse_line_colors};
 
 #[derive(Default)]
 pub struct Line {

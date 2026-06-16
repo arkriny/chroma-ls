@@ -1,99 +1,80 @@
-mod color;
-mod document;
-use document::Document;
-
+use serde_json::{Value, json};
 use std::collections::HashMap;
-use tokio::sync::RwLock;
+use std::io::{self, Read, Write};
 
-use tower_lsp_server::jsonrpc::Result;
-use tower_lsp_server::ls_types::*;
-use tower_lsp_server::{LanguageServer, LspService, Server};
+fn read_message(mut stdin: &io::Stdin) -> Option<Value> {
+    let mut line = String::new();
 
-struct Backend {
-    documents: RwLock<HashMap<Uri, Document>>,
+    // Read Content-Length header
+    stdin.read_line(&mut line).ok()?;
+    let content_length: usize = line.strip_prefix("Content-Length: ")?.trim().parse().ok()?;
+
+    // Read \r\n
+    line.clear();
+    stdin.read_line(&mut line).ok()?;
+
+    // Read body
+    let mut body = vec![0u8; content_length];
+    stdin.read_exact(&mut body).ok()?;
+
+    serde_json::from_slice(&body).ok()
 }
 
-impl Backend {
-    fn new() -> Self {
-        Self {
-            documents: RwLock::new(HashMap::new()),
+fn write_message(value: &Value) {
+    let body = value.to_string();
+    print!("Content-Length: {}\r\n\r\n{}", body.len(), body);
+    io::stdout().flush().unwrap();
+}
+
+fn main() {
+    let documents: HashMap<String, Document> = HashMap::new();
+    let stdin = io::stdin();
+    while let Some(msg) = read_message(&stdin) {
+        let Some(method) = msg.get("method").and_then(|m| m.as_str()) else {
+            break;
+        };
+
+        match method {
+            "initialize" => {
+                let id = msg["id"].clone();
+
+                let response = json!({
+                    "jsonrpc": "2.0",
+                    "id": id,
+                    "result": {
+                        "capabilities": {
+                            "openClose": true,
+                            "textDocumentSync": 2, // Incremental
+                        },
+                        "serverInfo": {
+                            "name": "chroma-ls",
+                            "version": env!("CARGO_PKG_VERSION").to_string(),
+                        }
+                    }
+                });
+
+                write_message(&response);
+            }
+
+            "shutdown" => {
+                let id = msg["id"].clone();
+                let response = json!({
+                    "jsonrpc": "2.0",
+                    "id": id,
+                    "result": null
+                });
+                write_message(&response);
+            }
+
+            "textDocument/didOpen" => {}
+
+            "exit" => {
+                std::process::exit(0);
+            }
+
+            _ => {
+                eprintln!("unknown method: {method}");
+            }
         }
     }
-}
-
-impl LanguageServer for Backend {
-    async fn initialize(&self, _: InitializeParams) -> Result<InitializeResult> {
-        Ok(InitializeResult {
-            capabilities: ServerCapabilities {
-                text_document_sync: Some(TextDocumentSyncCapability::Options(
-                    TextDocumentSyncOptions {
-                        open_close: Some(true),
-                        change: Some(TextDocumentSyncKind::INCREMENTAL),
-                        ..Default::default()
-                    },
-                )),
-                color_provider: Some(ColorProviderCapability::Simple(true)),
-                ..Default::default()
-            },
-            server_info: Some(ServerInfo {
-                name: "chroma-ls".to_string(),
-                version: Some(env!("CARGO_PKG_VERSION").to_string()),
-                ..Default::default()
-            }),
-            ..Default::default()
-        })
-    }
-
-    async fn shutdown(&self) -> Result<()> {
-        Ok(())
-    }
-
-    async fn did_open(&self, params: DidOpenTextDocumentParams) {
-        let uri = params.text_document.uri;
-        let content = params.text_document.text;
-
-        self.documents
-            .write()
-            .await
-            .insert(uri, Document::from(content.as_str()));
-    }
-
-    async fn did_change(&self, params: DidChangeTextDocumentParams) {
-        let uri = params.text_document.uri;
-        let mut docs = self.documents.write().await;
-
-        // Get or create the document
-        let doc = docs
-            .entry(uri.clone())
-            .or_insert_with(|| Document::from(""));
-
-        // Apply all changes in order
-        for change in params.content_changes {
-            doc.edit(&change);
-        }
-    }
-
-    async fn did_close(&self, params: DidCloseTextDocumentParams) {
-        let uri = params.text_document.uri;
-        self.documents.write().await.remove(&uri);
-    }
-
-    async fn document_color(&self, params: DocumentColorParams) -> Result<Vec<ColorInformation>> {
-        Ok(self
-            .documents
-            .read()
-            .await
-            .get(&params.text_document.uri)
-            .map(|doc| doc.get_colors())
-            .unwrap_or_default())
-    }
-}
-
-#[tokio::main]
-async fn main() {
-    let stdin = tokio::io::stdin();
-    let stdout = tokio::io::stdout();
-
-    let (service, socket) = LspService::new(|_| Backend::new());
-    Server::new(stdin, stdout, socket).serve(service).await;
 }
