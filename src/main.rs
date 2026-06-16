@@ -37,6 +37,7 @@ impl LanguageServer for Backend {
             },
             server_info: Some(ServerInfo {
                 name: "chroma-ls".to_string(),
+                version: Some(env!("CARGO_PKG_VERSION").to_string()),
                 ..Default::default()
             }),
             ..Default::default()
