@@ -1,6 +1,5 @@
-use tower_lsp_server::ls_types::*;
-
 use crate::color::parse_line_colors;
+use crate::lsp::*;
 
 #[derive(Default)]
 pub struct Line {
@@ -174,7 +173,6 @@ mod tests {
                     character: 3,
                 },
             }),
-            range_length: None,
             text: "b".to_string(),
         });
 
@@ -218,7 +216,6 @@ mod tests {
 
         document.edit(&TextDocumentContentChangeEvent {
             range: None,
-            range_length: None,
             text: "#00FF00".to_string(),
         });
         assert_eq!(document.to_string(), "#00FF00\n");
@@ -243,7 +240,6 @@ mod tests {
                     character: 0,
                 },
             }),
-            range_length: None,
             text: "\n#00FF00".to_string(),
         });
         assert_eq!(document.to_string(), "#FF0000\n#00FF00\n");
@@ -281,7 +277,6 @@ mod tests {
                     character: 0,
                 },
             }),
-            range_length: None,
             text: "\n#000000\n".to_string(),
         });
         assert_eq!(document.to_string(), "#FF0000\n#000000\n#00FF00\n#0000FF\n");
@@ -322,7 +317,6 @@ mod tests {
                     character: 0,
                 },
             }),
-            range_length: None,
             text: "".to_string(),
         });
         assert_eq!(document.to_string(), "#FF0000\n#0000FF\n");
@@ -354,12 +348,11 @@ mod tests {
                     character: 7,
                 },
             }),
-            range_length: None,
             text: "".to_string(),
         });
         assert_eq!(document.to_string(), "#FF000\n");
 
-        assert_eq!(document.get_colors(), Vec::new());
+        assert!(document.get_colors().is_empty());
     }
 
     #[test]
@@ -380,7 +373,6 @@ mod tests {
                     character: 7,
                 },
             }),
-            range_length: None,
             text: "00FF".to_string(),
         });
         assert_eq!(document.to_string(), "#FF00FF\n");
@@ -403,17 +395,15 @@ mod tests {
         // Clear all content (simulate full replace)
         document.edit(&TextDocumentContentChangeEvent {
             range: None,
-            range_length: None,
             text: "".to_string(),
         });
         assert_eq!(document.to_string(), "");
 
-        assert_eq!(document.get_colors(), Vec::new());
+        assert!(document.get_colors().is_empty());
 
         // Add a new color
         document.edit(&TextDocumentContentChangeEvent {
             range: None,
-            range_length: None,
             text: "#FFFFFF".to_string(),
         });
         assert_eq!(document.to_string(), "#FFFFFF\n");
@@ -439,7 +429,6 @@ mod tests {
                     character: 0,
                 },
             }),
-            range_length: None,
             text: "\n#00FF00".to_string(),
         });
         assert_eq!(document.to_string(), "#FF0000\n#00FF00\n");
@@ -464,7 +453,6 @@ mod tests {
                     character: 0,
                 },
             }),
-            range_length: None,
             text: "\n#0000FF".to_string(),
         });
         assert_eq!(document.to_string(), "#FF0000\n#00FF00\n#0000FF\n");

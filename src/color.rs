@@ -1,4 +1,4 @@
-use tower_lsp_server::ls_types::{Color, ColorInformation, Position, Range};
+use crate::lsp::{Color, ColorInformation, Position, Range};
 
 /// Parses all hex color codes in a line and returns them as `ColorInformation`.
 pub fn parse_line_colors(line: &str, line_idx: usize) -> Vec<ColorInformation> {
@@ -157,7 +157,7 @@ mod tests {
     #[test]
     fn parse_line_colors_no_colors() {
         let colors = parse_line_colors("#### no colors here #A 161616 #FF FF FF", 0);
-        assert_eq!(colors, Vec::new());
+        assert!(colors.is_empty());
     }
 
     #[test]
