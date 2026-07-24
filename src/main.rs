@@ -78,8 +78,7 @@ fn main() {
                 let params: DidChangeTextDocumentParams =
                     serde_json::from_value(msg.params).unwrap();
                 let uri = params.text_document.uri;
-
-                let doc = documents.entry(uri).or_insert_with(|| Document::from(""));
+                let doc = documents.get_mut(&uri).expect("textDocument/didChange requested with valid document");
 
                 for change in params.content_changes {
                     doc.edit(&change);
@@ -94,10 +93,8 @@ fn main() {
             "textDocument/documentColor" => {
                 let params: DocumentColorParams = serde_json::from_value(msg.params).unwrap();
                 let uri = params.text_document.uri;
-                let colors: Vec<ColorInformation> = documents
-                    .get(&uri)
-                    .map(|doc| doc.get_colors())
-                    .unwrap_or_default();
+                let doc = documents.get(&uri).expect("textDocument/documentColor requested with valid document");
+                let colors = doc.get_colors();
 
                 write_message(
                     &mut stdout,
