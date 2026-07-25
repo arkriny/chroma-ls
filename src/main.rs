@@ -61,16 +61,8 @@ fn main() {
                 );
             }
             "initialized" => {
-                eprintln!("initialized");
+                // TODO: take into account client's capabilities
             }
-            "shutdown" => write_message(
-                &mut stdout,
-                &Response {
-                    jsonrpc: "2.0",
-                    id: msg.id.unwrap(),
-                    result: serde_json::Value::Null,
-                },
-            ),
             "textDocument/didOpen" => {
                 let params: DidOpenTextDocumentParams = serde_json::from_value(msg.params).unwrap();
                 let uri = params.text_document.uri;
@@ -81,7 +73,9 @@ fn main() {
                 let params: DidChangeTextDocumentParams =
                     serde_json::from_value(msg.params).unwrap();
                 let uri = params.text_document.uri;
-                let doc = documents.get_mut(&uri).expect("textDocument/didChange requested with valid document");
+                let doc = documents
+                    .get_mut(&uri)
+                    .expect("textDocument/didChange requested with valid document");
 
                 for change in params.content_changes {
                     doc.edit(&change);
@@ -96,7 +90,9 @@ fn main() {
             "textDocument/documentColor" => {
                 let params: DocumentColorParams = serde_json::from_value(msg.params).unwrap();
                 let uri = params.text_document.uri;
-                let doc = documents.get(&uri).expect("textDocument/documentColor requested with valid document");
+                let doc = documents
+                    .get(&uri)
+                    .expect("textDocument/documentColor requested with valid document");
                 let colors = doc.get_colors();
 
                 write_message(
@@ -108,6 +104,14 @@ fn main() {
                     },
                 );
             }
+            "shutdown" => write_message(
+                &mut stdout,
+                &Response {
+                    jsonrpc: "2.0",
+                    id: msg.id.unwrap(),
+                    result: serde_json::Value::Null,
+                },
+            ),
             "exit" => return,
             _ => {
                 eprintln!("unsupported method: {method}");
