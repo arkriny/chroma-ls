@@ -46,7 +46,10 @@ fn main() {
                         id: msg.id.unwrap(),
                         result: json!({
                             "capabilities": {
-                                "textDocumentSync": 2, // Incremental
+                                "textDocumentSync": {
+                                    "openClose": true,
+                                    "change": 2, // Incremental
+                                },
                                 "colorProvider": true,
                             },
                             "serverInfo": {
