@@ -5,7 +5,6 @@ mod lsp;
 use document::Document;
 use lsp::*;
 
-use serde::Serialize;
 use serde_json::json;
 use std::collections::HashMap;
 use std::io;
@@ -24,10 +23,10 @@ fn read_message(stdin: &mut impl io::BufRead) -> Option<Message> {
     serde_json::from_slice(&body).ok()
 }
 
-fn write_message<T: Serialize>(stdout: &mut impl io::Write, resp: &Response<T>) {
-    let body = serde_json::to_string(&resp).unwrap();
+fn write_response<T: serde::Serialize>(w: &mut impl io::Write, r: &Response<T>) {
+    let body = serde_json::to_string(&r).unwrap();
     print!("Content-Length: {}\r\n\r\n{}", body.len(), body);
-    stdout.flush().unwrap();
+    w.flush().unwrap();
 }
 
 fn main() {
@@ -39,7 +38,7 @@ fn main() {
         let method = msg.method.as_str();
         match method {
             "initialize" => {
-                write_message(
+                write_response(
                     &mut stdout,
                     &Response {
                         jsonrpc: "2.0",
@@ -95,7 +94,7 @@ fn main() {
                     .expect("textDocument/documentColor requested with valid document");
                 let colors = doc.get_colors();
 
-                write_message(
+                write_response(
                     &mut stdout,
                     &Response {
                         jsonrpc: "2.0",
@@ -104,7 +103,7 @@ fn main() {
                     },
                 );
             }
-            "shutdown" => write_message(
+            "shutdown" => write_response(
                 &mut stdout,
                 &Response {
                     jsonrpc: "2.0",
