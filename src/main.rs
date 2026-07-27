@@ -25,7 +25,7 @@ fn read_message(stdin: &mut impl io::BufRead) -> Option<Message> {
 
 fn write_response<T: serde::Serialize>(w: &mut impl io::Write, r: &Response<T>) {
     let body = serde_json::to_string(&r).unwrap();
-    print!("Content-Length: {}\r\n\r\n{}", body.len(), body);
+    write!(w, "Content-Length: {}\r\n\r\n{}", body.len(), body).unwrap();
     w.flush().unwrap();
 }
 
